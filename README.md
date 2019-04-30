@@ -1,4 +1,4 @@
-# ADMMSofmax
+# ADMMSoftmax
 
 This repo contains a Matlab implementation of the ADMM-Softmax method described [here](https://arxiv.org/abs/1901.09450)
 
