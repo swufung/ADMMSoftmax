@@ -1,6 +1,6 @@
 # ADMMSoftmax
 
-This repo contains a Matlab implementation of the ADMM-Softmax method described [here](https://arxiv.org/abs/1901.09450)
+This repo contains a Matlab implementation of the ADMM-Softmax technique outlined in this [paper](https://arxiv.org/abs/1901.09450)
 
 
 # Dependencies
