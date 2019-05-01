@@ -22,7 +22,7 @@ If the user does not have the MNIST and CIFAR10 dataset, Meganet will give them 
 
 The codes here rely on the following:
 	
-	1) The forked Meganet package found [here](https://github.com/samywu/Meganet.m)
+	1) The forked Meganet package found [here](https://github.com/swufung/Meganet.m)
 	2) MATLAB 2018b which contains MATLAB’s deep neural network package (this is for the transfer learning component in the CIFAR-10 experiments).
 
 # Acknowledgments
