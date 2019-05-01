@@ -45,7 +45,6 @@ fprintf('\n ADAPTIVE ADMM number of training examples: %d \n\n', N);
 
 alpha = 1; 
 rho0 = 1e-1;
-% rho0 = 1e-10;
 
 %% regularization
 
@@ -73,16 +72,18 @@ f.pLoss.addBias=addBias; fTest.pLoss.addBias=addBias;
 %% initial admm values
 % rho0 = 1e-1; 
 maxIter = 1000; atol = 1e-12; rtol = 1e-12;
-his = zeros(maxIter,14); out=1; varRho=0; scaleRho = 2; mu = 10;
+his = zeros(maxIter,14); out=1; varRho=1; scaleRho = 2; mu = 10;
 rhoLowerBound = 1e-16;
 rhoUpperBound = 1e6;
 % 1)iter 2)Fw 3)Ftest, 4)trainAcc 5)testAcc 6)Ziters 7)Fz 8)Zres 9)resPri 10)epsPri 
 % 11)resDual 12)epsDual 13)rho 14)currentRuntime
 
+% NOTE: to change from adaptive ADMM to fixed ADMM, switch to varRho=0
+
 %% LeastSquares parameters
-lsSolver = 'cholesky';
+% lsSolver = 'cholesky';
 % lsSolver = 'qr';
-% lsSolver = 'backslash';
+lsSolver = 'backslash';
 tolW = 1e-2; 
 maxIterW = 20; 
 
@@ -320,6 +321,5 @@ end
 
 saveResults = 0;
 if saveResults==1
-%     save('admmResultsCIFAR10Adapt.mat', 'his', 'W', 'alpha', 'atol', 'rtol', 'atolZ', 'rtolZ', 'linSolMaxIterZ', 'lsMaxIterZ', 'maxIterZ', 'rho0', 'tolW')
-    save('admmResultsCIFAR10.mat', 'his', 'W', 'alpha', 'atol', 'rtol', 'atolZ', 'rtolZ', 'linSolMaxIterZ', 'lsMaxIterZ', 'maxIterZ', 'rho0', 'tolW')
+  save('admmResultsCIFAR10Adapt.mat', 'his', 'W', 'alpha', 'atol', 'rtol', 'atolZ', 'rtolZ', 'linSolMaxIterZ', 'lsMaxIterZ', 'maxIterZ', 'rho0', 'tolW')
 end
