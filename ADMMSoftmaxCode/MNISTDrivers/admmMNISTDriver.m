@@ -1,3 +1,5 @@
+clear all; clc;
+
 addpath(genpath('~/ADMMSoftmaxCode'))
 
 clear all; 
