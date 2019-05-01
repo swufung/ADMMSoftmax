@@ -13,7 +13,7 @@ To run the experiments, we have six driver codes (three for MNIST and three for 
 
 Simply run them in MATLAB.
 
-You will also need to add the paths to where your Meganet folder is located.
+You will also need to add the paths to where your Meganet folder is located. 
 
 If the user does not have the MNIST and CIFAR10 dataset, Meganet will give them the option to download the files automatically once the “setupCIFAR10” or “setupMNIST” function is called in the driver.
 
@@ -22,8 +22,9 @@ If the user does not have the MNIST and CIFAR10 dataset, Meganet will give them 
 
 The codes here rely on the following:
 	
-	1) The forked Meganet package found [here](https://github.com/swufung/Meganet.m)
-	2) MATLAB 2018b which contains MATLAB’s deep neural network package (this is for the transfer learning component in the CIFAR-10 experiments).
+1) The forked Meganet package found [here](https://github.com/swufung/Meganet.m)
+
+2) MATLAB 2018b which contains MATLAB’s deep neural network package (this is for the transfer learning component in the CIFAR-10 experiments).
 
 # Acknowledgments
 
