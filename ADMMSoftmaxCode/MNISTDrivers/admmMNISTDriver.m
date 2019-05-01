@@ -77,6 +77,8 @@ rhoUpperBound = 1e3;
 % 1)iter 2)Fw 3)Ftest, 4)trainAcc 5)testAcc 6)Ziters 7)Fz 8)Zres 9)lagrangian
 %10) resPri 11)epsPri 12)resDual 13)epsDual 14)rho 15)currentRuntime
 
+% NOTE: to change from adaptive ADMM to fixed ADMM, switch to varRho=0
+
 %% LeastSquares parameters
 % lsSolver = 'cholesky';
 lsSolver = 'backslash';
@@ -306,5 +308,4 @@ end
 saveResults = 0;
 if saveResults==1
     save('admmResultsMNISTAdapt.mat', 'his', 'W', 'alpha', 'atol', 'rtol', 'atolZ', 'rtolZ', 'linSolMaxIterZ', 'lsMaxIterZ', 'maxIterZ', 'rho0', 'tolW')
-%     save('admmResultsMNIST.mat', 'his', 'W', 'alpha', 'atol', 'rtol', 'atolZ', 'rtolZ', 'linSolMaxIterZ', 'lsMaxIterZ', 'maxIterZ', 'rho0', 'tolW')
 end
