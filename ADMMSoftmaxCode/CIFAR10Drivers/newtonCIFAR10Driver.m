@@ -1,14 +1,11 @@
 clear all; 
-% clc;
 
-% addpath(genpath('/home/samywu/ADMMSoftmaxCode')) % Tera
-addpath(genpath('/home/swu69/ADMMSoftmaxCode/')); % euler
+addpath(genpath('~/ADMMSoftmaxCode/')); 
 
-% load('featureExt50000.mat');
-% N = 50000; Nval = 0.2*N; 
-layer = 'pool5'
-N      = 50000
-Nval = 0.2*N;
+
+layer = 'pool5'; 
+N      = 50000; % training examples
+Nval = 0.2*N;   % validation examples
 [Dtrain,Ctrain,Dval,Cval] = setupCIFAR10AlexNet(N, Nval, layer);
 Dtrain = double(Dtrain); Dval = double(Dval);
 nf = size(Dtrain,1) 
@@ -20,11 +17,10 @@ fprintf('maxDval = %1.2e, minDval = %1.2e\n', max(Dval(:)), min(Dval(:)));
 Dtrain    = normalizeData(Dtrain, size(Dtrain,1));
 Dval      = normalizeData(Dval, size(Dval,1));
 fprintf('maxDtrain = %1.2e, minDtrain = %1.2e\n', max(Dtrain(:)), min(Dtrain(:)));
-fprintf('maxDval = %1.2e, minDval = %1.2e\n', max(Dval(:)), min(Dval(:)));
-
-alpha = 1; 
+fprintf('maxDval = %1.2e, minDval = %1.2e\n', max(Dval(:)), min(Dval(:))); 
 
 %% regularization
+alpha = 1;
 
 addBias=true;
 % % % % nImg = [27 27]; channelsOut = 96; % pool1
@@ -41,12 +37,6 @@ if addBias==true
 end
 
 Lout = sparse(genBlkDiag(L, nc-1));
-
-% % % L = speye(nf);
-% % % if addBias==true
-% % %     L = sparse([L zeros(size(L,1),1); zeros(1,size(L,2)) 1]);
-% % % end
-% % % Lout = sparse(genBlkDiag(L, nc-1));
 
 % account for mesh size: 
 Lout = Lout/(nf);
@@ -90,7 +80,7 @@ tSolve = tic
 [Wopt, hisOpt] = solve(opt,f,W0, fVal);
 tSolve = toc(tSolve)
 
-saveResults = 1;
-if saveResults==1
-    save('newtonResultsCIFAR10.mat', 'hisOpt', 'Wopt', 'alpha')
-end
+% saveResults = 1;
+% if saveResults==1
+%     save('newtonResultsCIFAR10.mat', 'hisOpt', 'Wopt', 'alpha')
+% end
