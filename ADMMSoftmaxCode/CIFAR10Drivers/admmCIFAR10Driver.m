@@ -1,6 +1,6 @@
 clear all; 
 
-addpath(genpath('/home/swu69/ADMMSoftmaxCode/')); % euler
+addpath(genpath('~/ADMMSoftmaxCode/'));
 
 layer = 'pool5'; N      = 50000; Nval = 0.2*N;
 [Dtrain,Ctrain,Dval,Cval] = setupCIFAR10AlexNet(N, Nval, layer);
@@ -124,11 +124,11 @@ param.outZ            = outZ;
 %% train
 [wOpt, hisOpt] = admmSoftmax(w0, param);
 
-saveResults=0;
-if saveResults==1
-    if varRho==1
-        save('admmResultsCIFAR10Adapt.mat', 'his', 'W', 'alpha', 'atol', 'rtol', 'atolZ', 'rtolZ', 'linSolMaxIterZ', 'lsMaxIterZ', 'maxIterZ', 'rho0', 'tolW')
-    elseif varRho==0
-        save('admmResultsCIFAR10.mat', 'hisOpt', 'wOpt', '', 'atol', 'rtol', 'atolZ', 'rtolZ', 'linSolMaxIterZ', 'lsMaxIterZ', 'maxIterZ', 'rho0')
-    end
-end
+% saveResults=0;
+% if saveResults==1
+%     if varRho==1
+%         save('admmResultsCIFAR10Adapt.mat', 'his', 'W', 'alpha', 'atol', 'rtol', 'atolZ', 'rtolZ', 'linSolMaxIterZ', 'lsMaxIterZ', 'maxIterZ', 'rho0', 'tolW')
+%     elseif varRho==0
+%         save('admmResultsCIFAR10.mat', 'hisOpt', 'wOpt', '', 'atol', 'rtol', 'atolZ', 'rtolZ', 'linSolMaxIterZ', 'lsMaxIterZ', 'maxIterZ', 'rho0')
+%     end
+% end
