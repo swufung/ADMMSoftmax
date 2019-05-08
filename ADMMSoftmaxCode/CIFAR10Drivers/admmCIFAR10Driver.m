@@ -60,7 +60,7 @@ fVal   = classObjFctn(pLoss,pRegW,Dval,Cval);
 f.pLoss.addBias=addBias; fVal.pLoss.addBias=addBias;
 
 %% initial admm values
-rho0 = 1e-11; 
+rho0 = 1e-10; 
 maxIter = 1000; atol = 1e-12; rtol = 1e-12;
 out=1; varRho=0; scaleRho = 2; mu = 10;
 rhoLowerBound = 1e-16;
