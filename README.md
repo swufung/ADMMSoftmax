@@ -7,9 +7,9 @@ To run the experiments, we have six driver codes (three for MNIST and three for 
 	1) admmMNISTDriver.m
 	2) newtonMNISTDriver.m
 	3) sgdMNISTDriver.m 
-	4) admmTransferLearningCIFAR10.m
-	5) newtonTransferLearningCIFAR10.m
-	6) sgdTransferLearningCIFAR10.m
+	4) admmCIFAR10Driver.m
+	5) newtonCIFAR10Driver.m
+	6) sgdCIFAR10Driver.m
 
 Simply run them in MATLAB.
 
