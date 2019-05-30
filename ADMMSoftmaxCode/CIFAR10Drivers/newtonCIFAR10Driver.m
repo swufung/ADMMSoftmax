@@ -2,10 +2,9 @@ clear all;
 
 addpath(genpath('~/ADMMSoftmaxCode/')); 
 
-
-layer = 'pool5'; 
-N      = 50000; % training examples
-Nval = 0.2*N;   % validation examples
+layer = 'pool5'
+N      = 50000
+Nval = 0.2*N;
 [Dtrain,Ctrain,Dval,Cval] = setupCIFAR10AlexNet(N, Nval, layer);
 Dtrain = double(Dtrain); Dval = double(Dval);
 nf = size(Dtrain,1) 
@@ -17,10 +16,12 @@ fprintf('maxDval = %1.2e, minDval = %1.2e\n', max(Dval(:)), min(Dval(:)));
 Dtrain    = normalizeData(Dtrain, size(Dtrain,1));
 Dval      = normalizeData(Dval, size(Dval,1));
 fprintf('maxDtrain = %1.2e, minDtrain = %1.2e\n', max(Dtrain(:)), min(Dtrain(:)));
-fprintf('maxDval = %1.2e, minDval = %1.2e\n', max(Dval(:)), min(Dval(:))); 
+fprintf('maxDval = %1.2e, minDval = %1.2e\n', max(Dval(:)), min(Dval(:)));
+
 
 %% regularization
-alpha = 1;
+
+alpha = 1; 
 
 addBias=true;
 % % % % nImg = [27 27]; channelsOut = 96; % pool1
@@ -58,9 +59,9 @@ f.pLoss.addBias=addBias; fVal.pLoss.addBias=addBias;
 vec     = @(x) x(:);
 
 if addBias==false
-    W0      = vec(zeros(nf,nc));
+    w0      = vec(zeros(nf,nc));
 else
-    W0      = vec(zeros(nf+1,nc));
+    w0      = vec(zeros(nf+1,nc));
 end
 
 %% newton setup
@@ -68,7 +69,7 @@ opt                 = newton('out',1);
 opt.out             = 2;
 opt.atol            = 1e-12;
 opt.rtol            = 1e-12;
-opt.maxIter         = 100;
+opt.maxIter         = 10;
 opt.LS.maxIter      = 10;
 opt.linSol.maxIter  = 20;
 opt.linSol.tol      = 1e-2;
@@ -77,10 +78,7 @@ opt.stoppingTime    = 300;
 
 %% solve
 tSolve = tic
-[Wopt, hisOpt] = solve(opt,f,W0, fVal);
+[wOpt, hisOpt] = solve(opt,f,w0, fVal);
 tSolve = toc(tSolve)
 
-% saveResults = 1;
-% if saveResults==1
-%     save('newtonResultsCIFAR10.mat', 'hisOpt', 'Wopt', 'alpha')
-% end
+save('newtonResultsCIFAR10.mat', 'hisOpt', 'wOpt', 'alpha')
