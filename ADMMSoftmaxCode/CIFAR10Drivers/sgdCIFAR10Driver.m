@@ -1,6 +1,6 @@
 clear all; 
 
-addpath(genpath('/home/swu69/ADMMSoftmaxCode/')); % euler
+addpath(genpath('~/ADMMSoftmaxCode/')); 
 
 layer = 'pool5'; N      = 50000; Nval = 0.2*N;
 [Dtrain,Ctrain,Dval,Cval] = setupCIFAR10AlexNet(N, Nval, layer);
@@ -45,9 +45,8 @@ fprintf(' max of Lout... ');
 max(Lout(:))
 fprintf('length of W = %d...\n', nf*nc)
 
-
-lr0 = 0.1;
-alpha = 1; miniBatch=30;
+lr0 = 1e-3;
+miniBatch=300;
 
 fprintf('\n\n lr0 = %1.2e, ALPHA = %1.2e, minibatch = %d \n', lr0, alpha, miniBatch);
 
@@ -74,9 +73,8 @@ opt.rtol      = 1e-3;
 opt.atol      = 1e-3;
 opt.miniBatch = miniBatch;
 opt.maxEpochs = 100;
-% opt.learningRate = @(epoch) lr0/sqrt(epoch);
 opt.learningRate = lr0;
-opt.stoppingTime = 500; %seconds
+opt.stoppingTime = 300; %seconds
 
 
 %% solve
@@ -89,4 +87,5 @@ fprintf('\n\n ALPHA = %1.2e, fTrain = %1.2e, fTest = %1.2e, trainAcc = %1.2f, te
 
 atol = opt.atol; rtol = opt.rtol; 
 miniBatch = opt.miniBatch;
+    
 save('sgdResultsCIFAR10.mat', 'hisOpt', 'wOpt', 'alpha', 'atol', 'miniBatch', 'rtol', 'lr0', 'miniBatch')
