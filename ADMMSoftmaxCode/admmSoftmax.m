@@ -21,13 +21,13 @@ out             = param.out;
 
 Wref            = param.Wref;
 Dtrain          = param.Dtrain;
-Dtest           = param.Dtest;
+Dval           = param.Dval;
 Ctrain          = param.Ctrain;
-Ctest           = param.Ctest;
+Cval           = param.Cval;
 L               = param.L;
 
 f               = param.f;    % class obj func with training data
-fTest           = param.fTest; % class obj func with test data
+fVal            = param.fVal; % class obj func with validation data
 
 % parameters for Z-step solver
 atolZ           = param.atolZ;
@@ -40,7 +40,7 @@ outZ            = param.outZ;
 
 
 nc = size(Ctrain,1);
-N = size(Dtrain,2); Ntest = size(Dtest,2);
+N = size(Dtrain,2); Nval = size(Dval,2);
 
 DDt = Dtrain*Dtrain';
 LLt = L*L';
@@ -79,7 +79,7 @@ if out>=1
             maxIter, rho0, varRho, scaleRho, mu, rtol, atol, alpha, lsSolver);
         fprintf('maxIterZ=%d, linSolMaxIterZ=%d, atolZ=%1.2e, rtolZ=%1.2e, linSolTolZ=%1.2e \n', ...
             maxIterZ, linSolMaxIterZ, atolZ, rtolZ, linSolTolZ);
-        fprintf('\niter\tfTrain\t  fTest\t     |W-Wold|\ttrainAcc  testAcc  Ziters    Fz\t      Zres\tLagrangian\tresPri\t   epsPri    resDual\tepsDual\t  rho\t    runtime  iterW  flagW     resW        tLS      tZ\n')
+        fprintf('\niter\tfTrain\t  fVal\t     |W-Wold|\ttrainAcc  valAcc  Ziters    Fz\t      Zres\tLagrangian\tresPri\t   epsPri    resDual\tepsDual\t  rho\t    runtime  iterW  flagW     resW        tLS      tZ\n')
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -155,15 +155,15 @@ while iter<=maxIter
     U = U + (Z - WD);
 
     %% store values
-    WDtest = W*Dtest;
+    WDval = W*Dval;
     [fTrain, paraTrain] = f.pLoss.getMisfit(WD, Ctrain);
-    [fcTest, paraVal]  = fTest.pLoss.getMisfit(WDtest, Ctest);
+    [fcVal, paraVal]  = fVal.pLoss.getMisfit(WDval, Cval);
 
-    accTrain = 100*(N-paraTrain(3))/N; accVal = 100*(Ntest-paraVal(3))/Ntest;
+    accTrain = 100*(N-paraTrain(3))/N; accVal = 100*(Nval-paraVal(3))/Nval;
 
     his(iter,1)   = iter; % current iter
-    his(iter,2:3) = [fTrain, fcTest]; % training and testing misfits
-    his(iter,4:5) = [accTrain, accVal]; % training and testing accuracies
+    his(iter,2:3) = [fTrain, fcVal]; % training and validation misfits
+    his(iter,4:5) = [accTrain, accVal]; % training and validation accuracies
     
     his(iter,6) = length(hisZ.his(:,1)); % number of newton iters for Z step
     his(iter,7) = hisZ.his(end,2); % Fz
