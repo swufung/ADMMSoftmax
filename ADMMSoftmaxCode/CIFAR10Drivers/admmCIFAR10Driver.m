@@ -60,12 +60,12 @@ fVal   = classObjFctn(pLoss,pRegW,Dval,Cval);
 f.pLoss.addBias=addBias; fVal.pLoss.addBias=addBias;
 
 %% initial admm values
-rho0 = 1e-10; 
-maxIter = 1000; atol = 1e-12; rtol = 1e-12;
+rho0 = 1e-12; 
+maxIter = 10000; atol = 1e-12; rtol = 1e-12;
 out=1; varRho=0; scaleRho = 2; mu = 10;
 rhoLowerBound = 1e-16;
 rhoUpperBound = 1e3;
-% 1)iter 2)Fw 3)Ftest, 4)trainAcc 5)testAcc 6)Ziters 7)Fz 8)Zres 9)lagrangian
+% 1)iter 2)Fw 3)Fval, 4)trainAcc 5)valAcc 6)Ziters 7)Fz 8)Zres 9)lagrangian
 %10) resPri 11)epsPri 12)resDual 13)epsDual 14)rho 15)currentRuntime
 
 %% LeastSquares solver
@@ -73,16 +73,16 @@ lsSolver = 'qr'; % 'cholesky', or 'qr'
 
 %% Z-step parameters
 maxIterZ = 100; % max number of Z newton iters
-linSolMaxIterZ = 100; % max number of CG iters per newton step in Z step
-lsMaxIterZ= 50; % max number of linesearch armijo iters per lin sol in Z step
-atolZ = 1e-12; rtolZ=1e-12; % abs and rel tolerance for z solve
+linSolMaxIterZ = 50; % max number of CG iters per newton step in Z step
+lsMaxIterZ= 20; % max number of linesearch armijo iters per lin sol in Z step
+atolZ = 1e-6; rtolZ=1e-6; % abs and rel tolerance for z solve
 outZ = 0; % output for Z solve
-linSolTolZ = 1e-12; % tolerance of linear solver (steihaug CG) for Z newton step
+linSolTolZ = 1e-6; % tolerance of linear solver (steihaug CG) for Z newton step
 %% stopping criteria
 % stoppingCrit{1} = 'regular';
 % stoppingCrit{1} = 'training'; stoppingCrit{2} = 90; % stop when 90% training
 stoppingCrit{1} = 'runtime'; stoppingCrit{2} = 300; % stop after 10 seconds
-% stoppingCrit{1} = 'maxiters'; stoppingCrit{2} = 50; % stop after 50 iters
+% stoppingCrit{1} = 'maxiters'; stoppingCrit{2} = 20; % stop after 50 iters
 
 %% setup param structure
 
@@ -124,11 +124,4 @@ param.outZ            = outZ;
 %% train
 [wOpt, hisOpt] = admmSoftmax(w0, param);
 
-% saveResults=0;
-% if saveResults==1
-%     if varRho==1
-%         save('admmResultsCIFAR10Adapt.mat', 'his', 'W', 'alpha', 'atol', 'rtol', 'atolZ', 'rtolZ', 'linSolMaxIterZ', 'lsMaxIterZ', 'maxIterZ', 'rho0', 'tolW')
-%     elseif varRho==0
-%         save('admmResultsCIFAR10.mat', 'hisOpt', 'wOpt', '', 'atol', 'rtol', 'atolZ', 'rtolZ', 'linSolMaxIterZ', 'lsMaxIterZ', 'maxIterZ', 'rho0')
-%     end
-% end
+save('admmResultsCIFAR10.mat', 'hisOpt', 'wOpt', 'atol', 'rtol', 'atolZ', 'rtolZ', 'linSolMaxIterZ', 'lsMaxIterZ', 'maxIterZ', 'rho0')
