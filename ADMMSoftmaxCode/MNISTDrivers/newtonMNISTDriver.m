@@ -1,4 +1,4 @@
-addpath(genpath('/home/swu69/ADMMSoftmaxCode/')); % euler
+addpath(genpath('~/ADMMSoftmaxCode/')); % euler
 
 clear all; 
 Ntrain = 40000; Nval = 10000; N = Ntrain + Nval; Ntest = 0.2*N;
