@@ -1,8 +1,29 @@
-function [wOpt,his] = admmSoftmax(W,param)
+function [wFinal,wOptLoss,wOptAcc,his] = admmSoftmax(W,param)
 % ADMM Softmax function
 % inputs: 
 %   w0 - initial weights, size(w0) = nf*nc x 1 
 %   parameter structure containing input variables
+
+% output: 
+%   wOptLoss - weights that lead to smallest loss on validation dataset
+%   wOptAcc  - weights that lead to highest accuracy
+%   wFinal   - weights at final iteration
+%   his      - history matrix. The columns correspond to: 
+%              1) iteration number 
+%              2) training misfit 
+%              3) validation misfit
+%              4) training accuracies, 
+%              5) validation accuracies, 
+%              6) number of newton iterations for z-step 
+%              7) z-step misfit 
+%              8) relative gradient norm, 
+%              9) lagrangian, 
+%              10) primal residual, 
+%              11) primal tolerance, 
+%              12) dual residual, 
+%              13) dual tolerance, 
+%              14) rho value, 
+%              15) current runtime of algorithm
 
 
 maxIter         = param.maxIter;
@@ -17,7 +38,7 @@ alpha           = param.alpha;
 lsSolver        = param.lsSolver;
 rho0            = param.rho0;
 scaleRho        = param.scaleRho;
-out             = param.out;
+% out             = param.out;
 
 Wref            = param.Wref;
 Dtrain          = param.Dtrain;
@@ -40,13 +61,13 @@ outZ            = param.outZ;
 
 
 nc = size(Ctrain,1);
-N = size(Dtrain,2); Nval = size(Dval,2);
+Ntrain = size(Dtrain,2); Nval = size(Dval,2);
 
 DDt = Dtrain*Dtrain';
 LLt = L*L';
 Z       = W*Dtrain; 
 
-U   = zeros(nc,N);
+U   = zeros(nc,Ntrain);
 rho = rho0; 
 rhoOld = rho;
 A = rho*DDt + alpha*LLt;
@@ -54,7 +75,7 @@ LLtWrefT = LLt*Wref';
 iter = 1;
 currentRuntime = 0;
 
-his = zeros(maxIter,14);
+his = zeros(maxIter,15);
 
 if strcmp(lsSolver, 'cholesky')
     tStartChol = tic;
@@ -68,19 +89,21 @@ elseif strcmp(lsSolver, 'qr')
     tElapsedQR = toc(tStartQR)
 end
 
-if out>=1
-    if varRho==1
-        fprintf('\t\t\t\t\t ========== adaptive ADMMSoftmax ========== \t\t\t\n')
-    else
-        fprintf('\t\t\t\t\t ========== fixed ADMMSoftmax ========== \t\t\t\n')
-    end
-    
-        fprintf('maxIter=%d, rho=%1.1e, varRho=%d, scaleRho=%1.2f, mu=%1.2f, rtol=%1.2e, atol=%1.2e, alpha=%1.2e, lsSolver = %s \n', ...
-            maxIter, rho0, varRho, scaleRho, mu, rtol, atol, alpha, lsSolver);
-        fprintf('maxIterZ=%d, linSolMaxIterZ=%d, atolZ=%1.2e, rtolZ=%1.2e, linSolTolZ=%1.2e \n', ...
-            maxIterZ, linSolMaxIterZ, atolZ, rtolZ, linSolTolZ);
-        fprintf('\niter\tfTrain\t  fVal\t     |W-Wold|\ttrainAcc  valAcc  Ziters    Fz\t      Zres\tLagrangian\tresPri\t   epsPri    resDual\tepsDual\t  rho\t    runtime  iterW  flagW     resW        tLS      tZ\n')
+if varRho==1
+    fprintf('\t\t\t\t\t ========== adaptive ADMMSoftmax ========== \t\t\t\n')
+else
+    fprintf('\t\t\t\t\t ========== fixed ADMMSoftmax ========== \t\t\t\n')
 end
+
+    fprintf('maxIter=%d, rho=%1.1e, varRho=%d, scaleRho=%1.2f, mu=%1.2f, rtol=%1.2e, atol=%1.2e, alpha=%1.2e, lsSolver = %s \n', ...
+        maxIter, rho0, varRho, scaleRho, mu, rtol, atol, alpha, lsSolver);
+    fprintf('maxIterZ=%d, linSolMaxIterZ=%d, atolZ=%1.2e, rtolZ=%1.2e, linSolTolZ=%1.2e \n', ...
+        maxIterZ, linSolMaxIterZ, atolZ, rtolZ, linSolTolZ);
+    fprintf('\niter\tfTrain\t  fVal\t     |W-Wold|\ttrainAcc  valAcc  Ziters    Fz\t      |dJ|/|dJ0|\tLagrangian\tresPri\t   epsPri    resDual\tepsDual\t  rho\t    runtime  iterW  flagW     resW        tLS      tZ\n')
+
+lowestMisfit = Inf;
+highestAcc   = 0;
+nrm0         = 0;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ADMM LOOP
@@ -126,6 +149,7 @@ while iter<=maxIter
     % create current Z regularizer
     tStartZ = tic;
     WD      = W*Dtrain;
+    if iter==1; [fTemp, paraTemp, dF0] =f.pLoss.getMisfit(WD, Ctrain); nrm0 = norm(dF0(:),2); end
     Zref = WD - U;
     pRegZ   = tikhonovReg(opEye(size(Zref,1)*size(Zref,2)),rho, Zref(:));
     pLossZ  = softmaxLossZ();
@@ -145,9 +169,11 @@ while iter<=maxIter
 
     Zold = Z;
     [Z, hisZ] = solve(optZ,fZ,Z(:));
-    Z = reshape(Z, nc, N);
+    Z = reshape(Z, nc, Ntrain);
 
     tElapsedZ = toc(tStartZ);
+    
+    Fz = hisZ.his(end,2);
 
 
 
@@ -156,20 +182,26 @@ while iter<=maxIter
 
     %% store values
     WDval = W*Dval;
-    [fTrain, paraTrain] = f.pLoss.getMisfit(WD, Ctrain);
+    [fcTrain, paraTrain, dFTrain] = f.pLoss.getMisfit(WD, Ctrain);
     [fcVal, paraVal]  = fVal.pLoss.getMisfit(WDval, Cval);
 
-    accTrain = 100*(N-paraTrain(3))/N; accVal = 100*(Nval-paraVal(3))/Nval;
-
-    his(iter,1)   = iter; % current iter
-    his(iter,2:3) = [fTrain, fcVal]; % training and validation misfits
-    his(iter,4:5) = [accTrain, accVal]; % training and validation accuracies
+    accTrain = 100*(Ntrain-paraTrain(3))/Ntrain; 
+    accVal = 100*(Nval-paraVal(3))/Nval;
     
-    his(iter,6) = length(hisZ.his(:,1)); % number of newton iters for Z step
-    his(iter,7) = hisZ.his(end,2); % Fz
-    his(iter,8) = hisZ.his(end,4); % gradient norm at end of Z newton
+    relGradNorm = norm(dFTrain(:),2)/nrm0;
     
+    %% keep weights containing highest accuracy and lowest misfit from validation set
     
+    if fcVal<=lowestMisfit
+        lowestMisfit = fcVal;
+        wOptLoss = W;
+    end
+    if accVal>=highestAcc
+        highestAcc = accVal;
+        wOptAcc = W;
+    end
+    
+    %%
     %% primal & dual residual
     resPri  = norm(Z-WD,'fro');
     resDual = norm(rho*Dtrain*(Z - Zold)', 'fro');
@@ -180,44 +212,63 @@ while iter<=maxIter
     currentRuntime = currentRuntime + tElapsedIter;
     
     % lagrangian=Fz+ Reg + 0.5rho*resPri^2 + sum(y_j'(u_j'*(z_j-Wd_j))
-    his(iter,9) = his(iter,7) + 0.5*alpha*norm(L*(W-Wref)','fro')^2 + 0.5*rho*resPri^2 + rho*sum(sum((U.*(Z-WD))));
-    
-    his(iter, 10:15) = [resPri, epsPri, resDual, epsDual, rho, currentRuntime];
+    his(iter,9) = Fz + 0.5*alpha*norm(L*(W-Wref)','fro')^2 + 0.5*rho*norm(resPri+U,'fro')^2 - 0.5*rho*norm(U, 'fro')^2;
 
     Wdiff = norm(W(:) - Wold(:));
 
     % printing
-    if out>=1
-        fprintf('%d\t%1.2e  %1.2e   %1.2e\t%1.2f\t  %1.2f\t  %d\t   %1.2e   %1.2e\t%1.2e\t%1.2e   %1.2e  %1.2e\t%1.2e  %1.2e  %1.2f      %d       %d     %1.2e  %1.2e     %1.2e\n',...
-            his(iter,1), his(iter,2), his(iter,3), Wdiff, his(iter,4), his(iter,5), his(iter,6), his(iter,7),...
-            his(iter,8), his(iter,9), his(iter,10), his(iter,11), his(iter,12), his(iter,13), his(iter,14), his(iter,15),...
-            iterW, flagW, relresW, tElapsedLS, tElapsedZ);
-    end
+    fprintf('%d\t%1.2e  %1.2e   %1.2e\t%1.2f\t  %1.2f\t  %d\t%1.2e\t%1.2e\t%1.2e\t%1.2e   %1.2e  %1.2e\t%1.2e  %1.2e  %1.2f      %d       %d     %1.2e  %1.2e     %1.2e\n',...
+        iter, fcTrain,fcVal, Wdiff, accTrain, accVal, length(hisZ.his(:,1)), Fz,...
+        relGradNorm, his(iter,9), resPri, epsPri, resDual, epsDual, rho, currentRuntime,...
+        iterW, flagW, relresW, tElapsedLS, tElapsedZ);
+    
+    his(iter,1)   = iter; % current iter
+    his(iter,2:3) = [fcTrain, fcVal]; % training and validation misfits
+    his(iter,4:5) = [accTrain, accVal]; % training and validation accuracies
+    
+    his(iter,6) = length(hisZ.his(:,1)); % number of newton iters for Z step
+    his(iter,7) = Fz; % Fz
+%     his(iter,8) = hisZ.his(end,4); % gradient norm at end of Z newton
+    his(iter,8) = relGradNorm; % optimality condition
+    
+    his(iter, 10:15) = [resPri, epsPri, resDual, epsDual, rho, currentRuntime];
 
     % stopping tolerance
     if strcmp(stoppingCrit{1}, 'regular')
         if resPri<=epsPri && resDual<=epsDual
             his = his(1:iter,:);
-            wOpt = W;
+            wFinal = W(:);
             break;
         end
     elseif strcmp(stoppingCrit{1}, 'training')
-        if stoppingCrit{2}<=trainingAcc
+        if accTrain>=stoppingCrit{2}
             his = his(1:iter,:);
-            wOpt = W;
+            wFinal = W(:);
             break;
         end
+    elseif strcmp(stoppingCrit{1}, 'validation')
+    if accVal>=stoppingCrit{2}
+        his = his(1:iter,:);
+        wFinal = W(:);
+        break;
+    end
     elseif strcmp(stoppingCrit{1}, 'runtime')
-        if stoppingCrit{2}<=currentRuntime
+        if currentRuntime>=stoppingCrit{2}
             his = his(1:iter,:);
-            wOpt = W;
+            wFinal = W(:);
+            break;
+        end
+    elseif strcmp(stoppingCrit{1}, 'relGradNorm')
+        if  relGradNorm<=stoppingCrit{2}
+            his = his(1:iter,:);
+            wFinal = W(:);
             break;
         end
     end
     
     if iter>=maxIter
         his = his(1:iter,:);
-            wOpt = W;
+        wFinal = W(:);
             break;
     end
 
