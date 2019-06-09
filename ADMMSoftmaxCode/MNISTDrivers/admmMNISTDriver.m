@@ -1,23 +1,27 @@
-clear all; 
 addpath(genpath('~/ADMMSoftmaxCode/')); % euler
 
-N = 50000; Nval = 0.2*N;
-[Dtrain,Ctrain,Dval,Cval] = setupMNIST(N, Nval);
+clear all; 
+Ntrain = 40000; Nval = 10000; N = Ntrain + Nval; Ntest = 0.2*N;
+
+[Dtrain, Ctrain, Dval, Cval, Dtest, Ctest] = setupMNIST2(N,Ntest);
 
 % Dtrain, Ctrain = training data
 % Dval, Cval = validation data
+% Dtest, Ctest = testing data
 
-Dtrain = reshape(Dtrain, 28*28, N);
-Dval = reshape(Dval, 28*28, Nval); 
+Dtrain = reshape(Dtrain, 28*28, Ntrain);
+Dval   = reshape(Dval, 28*28, Nval);
+Dtest  = reshape(Dtest, 28*28, Ntest); 
 
 fprintf('maxY = %1.2e, minY = %1.2e', max(Dtrain(:)), min(Dtrain(:)));
 
+
+%% 
 channelsIn = 1; 
 channelsOut = 9;
 nImg = [28 28];
 
-fprintf(' number of training examples: %d \n\n', N);
-
+nc = size(Ctrain,1);
 
 %% extreme learning
 % kernel size
@@ -25,11 +29,15 @@ sK = [3, 3, channelsIn, channelsOut]; %3x3 convolution window
 Ker = convFFT(nImg, sK);
 th   = randn(nTheta(Ker),1);
 K  = getOp(Ker,th);
-Dtrain = tanh(K*Dtrain); Dval = tanh(K*Dval);
+Dtrain = tanh(K*Dtrain); 
+Dval  = tanh(K*Dval);
+Dtest = tanh(K*Dtest);
 
-Dtrain = reshape(Dtrain, [], N); Dval = reshape(Dval, [], Nval);
+Dtrain = reshape(Dtrain, [], Ntrain); 
+Dval   = reshape(Dval, [], Nval); 
+Dtest  = reshape(Dtest, [], Ntest);
 
-nf = size(Dtrain,1); nc = size(Ctrain,1);
+nf = size(Dtrain,1);
 
 %% start optimization
 
@@ -56,7 +64,7 @@ L    = L/(nf);
 fprintf('size of Lout = %d...\n', size(Lout,1))
 fprintf('length of W = %d...\n', nf*nc)
 
-alpha = 1e-8; 
+alpha = 1e-6; 
 
 %%
 % for evaluating misfits accuracies
@@ -69,7 +77,7 @@ f.pLoss.addBias=addBias; fVal.pLoss.addBias=addBias;
 
 
 %% initial admm values
-rho0 = 1e-12; 
+rho0 = 1e-7; 
 maxIter = 10000; atol = 1e-12; rtol = 1e-14;
 his = zeros(maxIter,14); out=1; varRho=0; scaleRho = 2; mu = 10;
 rhoLowerBound = 1e-16;
@@ -96,8 +104,9 @@ stoppingCrit{1} = 'runtime'; stoppingCrit{2} = 300; % stop after 10 seconds
 
 if addBias==true
     w0      = (zeros(nc,nf+1));
-    Dtrain  = [Dtrain; ones(1,N)];
-    Dval    = [Dval; ones(1,Nval)]; 
+    Dtrain  = [Dtrain; ones(1,Ntrain)];
+    Dtest   = [Dtest; ones(1,Ntest)]; 
+    Dval    = [Dval; ones(1,Nval)];
     Wref    = zeros(nc,nf+1);
 else
     w0      = (zeros(nc,nf));
@@ -143,6 +152,48 @@ param.outZ            = outZ;
 
 
 %% train
-[wOpt, hisOpt] = admmSoftmax(w0, param);
+[wFinal, wOptLoss, wOptAcc, hisOpt] = admmSoftmax(w0, param);
+% [wOpt, hisOpt] = admmSoftmaxConditionNumber(w0, param);
 
-save('admmResultsMNIST.mat', 'hisOpt', 'wOpt', 'alpha', 'atol', 'rtol', 'atolZ', 'rtolZ', 'linSolMaxIterZ', 'lsMaxIterZ', 'maxIterZ', 'rho0')
+%% save best validation loss values
+WDLoss = reshape(wOptLoss, nc, [])*Dval;
+
+[FcValLoss, paraValLoss] = fVal.pLoss.getMisfit(WDLoss, Cval);
+errValLoss = paraValLoss(3);
+accValLoss = 100*(Nval-errValLoss)/Nval;
+
+% save best validation accuracy values
+WDAcc = reshape(wOptAcc, nc, [])*Dval;
+
+[FcValAcc, paraValAcc] = fVal.pLoss.getMisfit(WDAcc, Cval);
+errValAcc = paraValAcc(3);
+accValAcc = 100*(Nval-errValAcc)/Nval;
+
+fprintf('\n ------ VALIDATION RESULTS ------ \n')
+fprintf('\n wOptLoss: fVal = %1.2e, accVal = %1.2f\n', FcValLoss, accValLoss);
+fprintf('\n wOptAcc: fVal = %1.2e, accVal = %1.2f\n', FcValAcc, accValAcc);
+
+
+%% check testing accuracy
+pLossTest = softmaxLoss();
+fTest     = classObjFctn(pLossTest,pRegW,Dtest(1:end-1,:),Ctest);
+
+% weights that minimize validation misfit
+[FcTestLoss, paraTestLoss] = fTest.eval(wOptLoss(:));
+errTestLoss = paraTestLoss.hisLoss(3);
+accTestLoss = 100*(Ntest-errTestLoss)/Ntest;
+
+% weights that maximize validation accuracy
+[FcTestAcc, paraTestAcc] = fTest.eval(wOptAcc(:));
+errTestAcc = paraTestAcc.hisLoss(3);
+accTestAcc = 100*(Ntest-errTestAcc)/Ntest;
+
+fprintf('\n ------ TESTING RESULTS ------ \n')
+fprintf('\n wOptLoss: fTest = %1.2e, accTest = %1.2f\n', FcTestLoss, accTestLoss);
+fprintf('\n wOptAcc: fTest = %1.2e, accTest = %1.2f\n', FcTestAcc, accTestAcc);
+
+
+saveResults=0;
+if saveResults==1
+    save('admmResultsMNIST.mat', 'hisOpt', 'wOptLoss', 'wOptAcc','wFinal', 'K', 'alpha', 'atol', 'rtol', 'atolZ', 'rtolZ', 'linSolMaxIterZ', 'lsMaxIterZ', 'maxIterZ', 'rho0', 'FcTestLoss', 'accTestLoss', 'FcTestAcc', 'accTestAcc')
+end
