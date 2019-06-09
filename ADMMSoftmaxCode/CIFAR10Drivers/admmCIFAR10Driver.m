@@ -68,15 +68,15 @@ f.pLoss.addBias=0; fVal.pLoss.addBias=0;
 %% initial admm values
 rho0 = 8e-12; 
 maxIter = 10000; atol = 1e-12; rtol = 1e-12;
-out=1; varRho=1; scaleRho = 2; mu = 10;
+out=1; varRho=0; scaleRho = 2; mu = 10;
 rhoLowerBound = 1e-16;
 rhoUpperBound = 1e3;
 % 1)iter 2)Fw 3)Fval, 4)trainAcc 5)valAcc 6)Ziters 7)Fz 8)Zres 9)lagrangian
 %10) resPri 11)epsPri 12)resDual 13)epsDual 14)rho 15)currentRuntime
 
 %% LeastSquares solver
-% lsSolver = 'qr'; % 'cholesky', or 'qr'
-lsSolver = 'backslash';
+lsSolver = 'qr'; % 'cholesky', or 'qr'
+% lsSolver = 'backslash';
 
 %% Z-step parameters
 maxIterZ = 100; % max number of Z newton iters
